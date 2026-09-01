@@ -30,7 +30,10 @@ class User(models.Model):
         self._password = generate_password_hash(value)
 
     def check_password(self, value):
-        return check_password_hash(self.password, value)
+        if check_password_hash(self.password, value):
+            return True
+        # 兼容前端 MD5 后提交，以及容器部署时使用明文密码登录
+        return check_password_hash(self.password, to_md5(value))
 
 
 class UserInfo(models.Model):

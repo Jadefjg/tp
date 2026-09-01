@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自动化测试平台</title>
+  <style>
+    :root {
+      --bg: #0a7e8c;
+      --bg-dark: #06656f;
+      --bg-darker: #05545c;
+      --accent: #4d9eff;
+      --text: #303133;
+    }
+    * { box-sizing: border-box; }
+    html, body, #app { height: 100%; margin: 0; }
+    body {
+      font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      color: var(--text);
+      background: #e8f4f5;
+    }
+    .layout { display: flex; height: 100%; }
+    .sidebar {
+      width: 210px; flex-shrink: 0; background: var(--bg-dark); color: #d7eef0;
+      display: flex; flex-direction: column; overflow: auto;
+    }
+    .sidebar.collapsed { width: 64px; }
+    .logo {
+      display: flex; align-items: center; gap: 10px; height: 50px;
+      padding: 0 16px; background: var(--bg);
+    }
+    .logo-mark {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; color: #fff; font-weight: 700;
+      background: var(--accent);
+    }
+    .logo-text { white-space: nowrap; color: #fff; font-size: 16px; font-weight: 600; }
+    .menu { padding: 8px 0; }
+    .menu a, .menu .group-title {
+      display: flex; align-items: center; gap: 10px; height: 50px;
+      padding: 0 20px; color: #d7eef0; text-decoration: none; cursor: pointer; font-size: 14px;
+    }
+    .menu a:hover, .menu .group-title:hover { color: #fff; background: rgba(255,255,255,.08); }
+    .menu a.active { color: #fff; background: var(--accent); }
+    .menu .icon { width: 18px; text-align: center; flex-shrink: 0; }
+    .menu .arrow { margin-left: auto; font-size: 12px; color: rgba(255,255,255,.65); }
+    .submenu { display: none; background: var(--bg-darker); }
+    .submenu.open { display: block; }
+    .submenu a { padding-left: 48px; height: 44px; }
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .header {
+      height: 50px; background: #fff; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px; box-shadow: 0 1px 4px rgba(10,126,140,.12);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; color: #303133; }
+    .hamburger { cursor: pointer; font-size: 18px; user-select: none; }
+    .crumb { font-size: 14px; }
+    .header-right { display: flex; align-items: center; gap: 8px; cursor: pointer; position: relative; }
+    .avatar {
+      width: 28px; height: 28px; border-radius: 4px; object-fit: cover; background: #dbeafe;
+    }
+    .dropdown {
+      display: none; position: absolute; right: 0; top: 40px; background: #fff;
+      min-width: 120px; box-shadow: 0 2px 12px rgba(0,0,0,.12); border-radius: 4px; overflow: hidden;
+    }
+    .dropdown.open { display: block; }
+    .dropdown div { padding: 10px 16px; font-size: 14px; }
+    .dropdown div:hover { background: #e8f4f5; }
+    .content { flex: 1; padding: 16px; overflow: auto; background: #fff; margin: 12px; border-radius: 2px; }
+    .dash-name { font-size: 28px; font-weight: 500; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e6eef0; }
+    th { color: #5b7a7e; font-weight: 500; background: #f3fafb; }
+    .empty { color: #909399; padding: 24px 0; }
+    .hidden { display: none !important; }
+    .collapsed .logo-text, .collapsed .menu span:not(.icon), .collapsed .arrow { display: none; }
+    .collapsed .submenu a { padding-left: 20px; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <div class="logo-mark">V</div>
+        <div class="logo-text">自动化测试平台</div>
+      </div>
+      <nav class="menu">
+        <a href="#/dashboard" data-route="dashboard" class="active"><span class="icon">⏱</span><span>仪表盘</span></a>
+        <div class="group-title" data-group="project"><span class="icon">🏢</span><span>项目管理</span><span class="arrow">▸</span></div>
+        <div class="submenu" id="g-project">
+          <a href="#/project" data-route="project">项目列表</a>
+          <a href="#/environment" data-route="environment">环境管理</a>
+        </div>
+        <div class="group-title" data-group="api"><span class="icon">✉</span><span>接口管理</span><span class="arrow">▸</span></div>
+        <div class="submenu" id="g-api">
+          <a href="#/interface" data-route="interface">接口列表</a>
+          <a href="#/sync" data-route="sync">同步配置</a>
+        </div>
+        <div class="group-title" data-group="case"><span class="icon">☰</span><span>用例管理</span><span class="arrow">▸</span></div>
+        <div class="submenu" id="g-case">
+          <a href="#/testcase" data-route="testcase">用例列表</a>
+        </div>
+        <div class="group-title" data-group="task"><span class="icon">📋</span><span>任务管理</span><span class="arrow">▸</span></div>
+        <div class="submenu" id="g-task">
+          <a href="#/task" data-route="task">任务列表</a>
+          <a href="#/taskrun" data-route="taskrun">执行记录</a>
+        </div>
+        <a href="#/user" data-route="user"><span class="icon">👤</span><span>用户管理</span></a>
+      </nav>
+    </aside>
+    <section class="main">
+      <header class="header">
+        <div class="header-left">
+          <span class="hamburger" id="hamburger">☰</span>
+          <span class="crumb" id="crumb">仪表盘</span>
+        </div>
+        <div class="header-right" id="profile">
+          <img class="avatar" id="avatar" alt="" />
+          <span id="username">-</span>
+          <span>▾</span>
+          <div class="dropdown" id="dropdown">
+            <div id="logout-btn">退出登录</div>
+          </div>
+        </div>
+      </header>
+      <main class="content" id="content"></main>
+    </section>
+  </div>
+  <script>
+    const TOKEN_KEY = "tp-token";
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) location.replace("/login");
+
+    const titles = {
+      dashboard: "仪表盘",
+      project: "项目管理",
+      environment: "环境管理",
+      interface: "接口管理",
+      sync: "同步配置",
+      testcase: "用例管理",
+      task: "任务管理",
+      taskrun: "执行记录",
+      user: "用户管理"
+    };
+    const groups = {
+      project: "project",
+      environment: "project",
+      interface: "api",
+      sync: "api",
+      testcase: "case",
+      task: "task",
+      taskrun: "task"
+    };
+
+    function headers() {
+      return { Token: token, "Content-Type": "application/json" };
+    }
+
+    async function getJSON(url) {
+      const res = await fetch(url, { headers: headers() });
+      return res.json();
+    }
+
+    function currentRoute() {
+      const hash = (location.hash || "#/dashboard").replace("#/", "");
+      return titles[hash] ? hash : "dashboard";
+    }
+
+    function renderTable(columns, rows) {
+      if (!rows.length) return '<div class="empty">暂无数据</div>';
+      return "<table><thead><tr>" + columns.map(function (c) { return "<th>" + c.label + "</th>"; }).join("") +
+        "</tr></thead><tbody>" + rows.map(function (row) {
+          return "<tr>" + columns.map(function (c) { return "<td>" + (row[c.key] == null || row[c.key] === "" ? "-" : row[c.key]) + "</td>"; }).join("") + "</tr>";
+        }).join("") + "</tbody></table>";
+    }
+
+    async function loadView(route) {
+      const el = document.getElementById("content");
+      if (route === "dashboard") {
+        const info = window.__user || {};
+        el.innerHTML = '<div class="dash-name">name: ' + (info.name || info.username || "-") + "</div>";
+        return;
+      }
+      el.innerHTML = '<div class="empty">加载中…</div>';
+      const map = {
+        project: ["/api/project?page=1&page_size=20", [{ key: "name", label: "名称" }, { key: "description", label: "描述" }, { key: "createAt", label: "创建时间" }]],
+        environment: ["/api/environment?page=1&page_size=20", [{ key: "name", label: "名称" }, { key: "project_name", label: "项目" }, { key: "description", label: "描述" }]],
+        interface: ["/api/interface?page=1&page_size=20", [{ key: "title", label: "标题" }, { key: "method", label: "方法" }, { key: "path", label: "路径" }]],
+        sync: ["/api/sync_config?page=1&page_size=20", [{ key: "remote_project_name", label: "远程项目" }, { key: "url", label: "地址" }, { key: "project_name", label: "本地项目" }]],
+        testcase: ["/api/testcase?page=1&page_size=20", [{ key: "title", label: "标题" }, { key: "project_name", label: "项目" }, { key: "priority", label: "优先级" }]],
+        task: ["/api/task?page=1&page_size=20", [{ key: "taskname", label: "任务名" }, { key: "project_name", label: "项目" }, { key: "comment", label: "说明" }]],
+        taskrun: ["/api/taskrun?page=1&page_size=20", [{ key: "taskname", label: "任务" }, { key: "env_name", label: "环境" }, { key: "status", label: "状态" }]],
+        user: ["/api/user?page=1&page_size=20", [{ key: "username", label: "用户名" }, { key: "isAdmin", label: "管理员" }, { key: "createAt", label: "创建时间" }]]
+      };
+      const conf = map[route];
+      if (!conf) return;
+      const data = await getJSON(conf[0]);
+      if (data.code === 50008 || data.code === 50014) {
+        localStorage.removeItem(TOKEN_KEY);
+        location.replace("/login");
+        return;
+      }
+      const items = (data.data && data.data.items) || data.data || [];
+      el.innerHTML = renderTable(conf[1], items);
+    }
+
+    function syncMenu(route) {
+      document.querySelectorAll(".menu a").forEach(function (a) {
+        a.classList.toggle("active", a.getAttribute("data-route") === route);
+      });
+      document.getElementById("crumb").textContent = titles[route] || "仪表盘";
+      const group = groups[route];
+      document.querySelectorAll(".submenu").forEach(function (el) {
+        el.classList.toggle("open", group && el.id === "g-" + group);
+      });
+    }
+
+    async function boot() {
+      const info = await getJSON("/user/info");
+      if (!info || info.code !== 20000) {
+        localStorage.removeItem(TOKEN_KEY);
+        location.replace("/login");
+        return;
+      }
+      window.__user = info.data;
+      document.getElementById("username").textContent = info.data.name || info.data.username || "";
+      document.getElementById("avatar").src = info.data.avatar || "https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif";
+      const route = currentRoute();
+      if (!location.hash) location.hash = "#/dashboard";
+      syncMenu(route);
+      await loadView(route);
+    }
+
+    window.addEventListener("hashchange", function () {
+      const route = currentRoute();
+      syncMenu(route);
+      loadView(route);
+    });
+
+    document.getElementById("hamburger").addEventListener("click", function () {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    });
+    document.getElementById("profile").addEventListener("click", function (event) {
+      event.stopPropagation();
+      document.getElementById("dropdown").classList.toggle("open");
+    });
+    document.addEventListener("click", function () {
+      document.getElementById("dropdown").classList.remove("open");
+    });
+    document.querySelectorAll(".group-title").forEach(function (el) {
+      el.addEventListener("click", function () {
+        document.getElementById("g-" + el.dataset.group).classList.toggle("open");
+      });
+    });
+    document.getElementById("logout-btn").addEventListener("click", async function () {
+      try { await fetch("/user/logout", { method: "POST", headers: headers() }); } catch (e) {}
+      localStorage.removeItem(TOKEN_KEY);
+      location.replace("/login");
+    });
+
+    boot();
+  </script>
+</body>
+</html>

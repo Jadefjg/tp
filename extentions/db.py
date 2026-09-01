@@ -1,7 +1,7 @@
 from blueprints.case.models import File
 import os
 
-from config import Config, DEBUG
+from config import Config
 from tortoise import Tortoise
 from sanic.log import logger
 
@@ -28,16 +28,36 @@ def init_db(app):
             },
             timezone=Config.TIME_ZONE
         )
-        if DEBUG:
+        if Config.GENERATE_SCHEMAS:
             await Tortoise.generate_schemas(safe=True)
+        try:
+            await ensure_admin()
+        except Exception:
+            logger.exception('管理员账号初始化失败。')
+        if Config.INIT_DEBUG_DATA:
             try:
                 await init_data()
-            except:
+            except Exception:
                 logger.exception('调试数据初始化错误。')
 
     @app.listener('after_server_stop')
     async def db_at_stop(app, loop):
         await Tortoise.close_connections()
+
+async def ensure_admin():
+    from blueprints.user.models import User, UserInfo
+    username = Config.ADMIN_USER
+    password = Config.ADMIN_PASSWORD
+    if not username or not password:
+        return
+    user = await User.filter(username=username).first()
+    if user is not None:
+        return
+    user = User(username=username, password=password, isAdmin=True)
+    await user.save()
+    await UserInfo.create(user=user, name=username)
+    logger.info('已创建管理员账号: %s', username)
+
 
 async def init_data():
     from blueprints.task.models import Task, TaskScheduler

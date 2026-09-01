@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自动化测试平台</title>
+  <style>
+    :root {
+      --bg: #0a7e8c;
+      --input-bg: rgba(4, 70, 78, 0.45);
+      --input-border: rgba(180, 230, 236, 0.35);
+      --placeholder: #d8e8ea;
+      --accent: #4d9eff;
+      --text: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .wrap {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+    }
+    .panel { width: min(360px, 100%); text-align: center; }
+    h1 {
+      margin: 0 0 36px;
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+    }
+    .field {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .field svg.lead {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: var(--placeholder);
+      stroke-width: 1.8;
+    }
+    .field .eye {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      color: var(--placeholder);
+    }
+    input {
+      width: 100%;
+      height: 46px;
+      padding: 0 42px 0 42px;
+      color: var(--text);
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 4px;
+      outline: none;
+      font-size: 15px;
+    }
+    input::placeholder { color: var(--placeholder); }
+    input:focus { border-color: rgba(255,255,255,.55); }
+    button.submit {
+      width: 100%;
+      height: 46px;
+      margin-top: 4px;
+      border: 0;
+      border-radius: 4px;
+      color: #fff;
+      background: var(--accent);
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button.submit[disabled] { opacity: 0.7; cursor: not-allowed; }
+    .switch {
+      margin: 18px 0 0;
+      color: rgba(255,255,255,.78);
+      font-size: 13px;
+    }
+    .switch a { color: #fff; text-decoration: underline; cursor: pointer; }
+    .msg {
+      display: none;
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      text-align: left;
+    }
+    .msg.error { display: block; color: #fff; background: rgba(220, 38, 38, 0.28); }
+    .msg.ok { display: block; color: #fff; background: rgba(16, 185, 129, 0.28); }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h1 id="title">自动化测试平台</h1>
+      <div id="msg" class="msg"></div>
+
+      <form id="login-form">
+        <div class="field">
+          <svg class="lead" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 19c1.4-3.2 3.8-4.8 7-4.8s5.6 1.6 7 4.8"/></svg>
+          <input name="username" autocomplete="username" required maxlength="32" placeholder="Username" />
+        </div>
+        <div class="field">
+          <svg class="lead" viewBox="0 0 24 24"><rect x="6" y="11" width="12" height="9" rx="1.5"/><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11"/></svg>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Password" />
+          <button class="eye" type="button" data-target="login-password" aria-label="显示密码">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <button class="submit" type="submit" id="login-btn">Login</button>
+      </form>
+
+      <form id="register-form" class="hidden">
+        <div class="field">
+          <svg class="lead" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 19c1.4-3.2 3.8-4.8 7-4.8s5.6 1.6 7 4.8"/></svg>
+          <input name="username" autocomplete="username" required minlength="2" maxlength="32" placeholder="Username" />
+        </div>
+        <div class="field">
+          <svg class="lead" viewBox="0 0 24 24"><path d="M4 20V6a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>
+          <input name="name" maxlength="32" placeholder="Nickname (optional)" />
+        </div>
+        <div class="field">
+          <svg class="lead" viewBox="0 0 24 24"><rect x="6" y="11" width="12" height="9" rx="1.5"/><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11"/></svg>
+          <input id="reg-password" name="password" type="password" autocomplete="new-password" required minlength="6" placeholder="Password" />
+          <button class="eye" type="button" data-target="reg-password" aria-label="显示密码">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="field">
+          <svg class="lead" viewBox="0 0 24 24"><rect x="6" y="11" width="12" height="9" rx="1.5"/><path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11"/></svg>
+          <input name="confirm_password" type="password" autocomplete="new-password" required minlength="6" placeholder="Confirm Password" />
+        </div>
+        <button class="submit" type="submit" id="register-btn">Register</button>
+      </form>
+
+      <p class="switch" id="login-switch">
+        还没有账号？<a data-mode="register">立即注册</a>
+      </p>
+      <p class="switch hidden" id="register-switch">
+        已有账号？<a data-mode="login">返回登录</a>
+      </p>
+    </div>
+  </div>
+  <script>
+    const TOKEN_KEY = "tp-token";
+    const HOME_PATH = "/dashboard";
+    if (localStorage.getItem(TOKEN_KEY) && location.pathname.indexOf("register") === -1) {
+      location.replace(HOME_PATH);
+    }
+    const msgEl = document.getElementById("msg");
+    const loginForm = document.getElementById("login-form");
+    const registerForm = document.getElementById("register-form");
+
+    function showMsg(text, type) {
+      msgEl.className = "msg " + type;
+      msgEl.textContent = text || "";
+      msgEl.style.display = text ? "block" : "none";
+    }
+
+    function setMode(mode) {
+      const isRegister = mode === "register";
+      document.getElementById("title").textContent = isRegister ? "注册账号" : "自动化测试平台";
+      loginForm.classList.toggle("hidden", isRegister);
+      registerForm.classList.toggle("hidden", !isRegister);
+      document.getElementById("login-switch").classList.toggle("hidden", isRegister);
+      document.getElementById("register-switch").classList.toggle("hidden", !isRegister);
+      history.replaceState(null, "", isRegister ? "/register" : "/login");
+      showMsg("", "ok");
+    }
+
+    function formData(form) {
+      return Object.fromEntries(new FormData(form).entries());
+    }
+
+    async function request(url, payload) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      return res.json();
+    }
+
+    function enterApp(token) {
+      localStorage.setItem(TOKEN_KEY, token);
+      location.replace(HOME_PATH);
+    }
+
+    document.querySelectorAll(".eye").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const input = document.getElementById(btn.dataset.target);
+        input.type = input.type === "password" ? "text" : "password";
+      });
+    });
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const btn = document.getElementById("login-btn");
+      btn.disabled = true;
+      showMsg("", "ok");
+      try {
+        const data = await request("/login", formData(loginForm));
+        if (data.code === 20000 && data.data && data.data.token) {
+          enterApp(data.data.token);
+        } else {
+          showMsg(data.message || "登录失败", "error");
+        }
+      } catch (err) {
+        showMsg("网络异常，请稍后重试", "error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    registerForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const payload = formData(registerForm);
+      if (payload.password !== payload.confirm_password) {
+        showMsg("两次输入的密码不一致", "error");
+        return;
+      }
+      const btn = document.getElementById("register-btn");
+      btn.disabled = true;
+      showMsg("", "ok");
+      try {
+        const data = await request("/register", payload);
+        if (data.code === 20000 && data.data && data.data.token) {
+          enterApp(data.data.token);
+        } else {
+          showMsg(data.message || "注册失败", "error");
+        }
+      } catch (err) {
+        showMsg("网络异常，请稍后重试", "error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.querySelectorAll("a[data-mode]").forEach((el) => {
+      el.addEventListener("click", (event) => {
+        event.preventDefault();
+        setMode(el.dataset.mode);
+      });
+    });
+
+    if (location.pathname.indexOf("register") !== -1) {
+      setMode("register");
+    }
+  </script>
+</body>
+</html>

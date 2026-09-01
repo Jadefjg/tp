@@ -4,6 +4,7 @@ from .models import User, UserInfo, LoginRecord
 from tortoise.exceptions import DoesNotExist, IntegrityError
 # import jwt
 import time
+import os
 from config import Config
 from utils import to_str, to_bytes
 from hashlib import sha1
@@ -12,9 +13,31 @@ from urllib.parse import urlencode, quote
 from const import CommonResponse, ResponseCode
 from framework.api import BaseApi, ReadMixin, WriteMixin, DeleteMixin
 
+LOGIN_PAGE = os.path.join(Config.BASEDIR, 'static', 'login.html')
+HOME_PAGE = os.path.join(Config.BASEDIR, 'static', 'home.html')
+
+
+def _login_page():
+    return response.file(LOGIN_PAGE)
+
+
+def _home_page():
+    return response.file(HOME_PAGE)
+
+
+class Home(views.HTTPMethodView):
+    async def get(self, request: Request):
+        if request.path.rstrip('/') == '/home':
+            return response.redirect('/dashboard')
+        return await _home_page()
+
+
 class Login(views.HTTPMethodView):
+    async def get(self, request: Request):
+        return await _login_page()
+
     async def post(self, request:Request):
-        params =  request.form or request.json
+        params = request.form or request.json or {}
         username = params.get('username')
         password = params.get('password')
         try:
@@ -25,7 +48,7 @@ class Login(views.HTTPMethodView):
                 token = await LoginRecord.login(user)
                 return response.json({
                     'code': ResponseCode.OK,
-                    'message': '',
+                    'message': '登录成功',
                     'data': {"token": token}
                 })
         except DoesNotExist as e:
@@ -34,6 +57,61 @@ class Login(views.HTTPMethodView):
             'code': ResponseCode.WRONG_LOGIN_INFO,
             'message': '用户名或者密码不正确',
             'data': None
+        }, status=200)
+
+
+class Register(views.HTTPMethodView):
+    async def get(self, request: Request):
+        return await _login_page()
+
+    async def post(self, request: Request):
+        params = request.form or request.json or {}
+        username = (params.get('username') or '').strip()
+        password = params.get('password') or ''
+        confirm = params.get('confirm_password') or params.get('confirmPassword') or ''
+        name = (params.get('name') or username).strip()
+
+        if not username or not password:
+            return response.json({
+                'code': ResponseCode.BAD_REQUEST_ARGS,
+                'message': '用户名和密码不能为空',
+                'data': None
+            }, status=200)
+        if len(username) < 2 or len(username) > 32:
+            return response.json({
+                'code': ResponseCode.BAD_REQUEST_ARGS,
+                'message': '用户名长度为 2-32 个字符',
+                'data': None
+            }, status=200)
+        if len(password) < 6:
+            return response.json({
+                'code': ResponseCode.BAD_REQUEST_ARGS,
+                'message': '密码至少 6 位',
+                'data': None
+            }, status=200)
+        if confirm and confirm != password:
+            return response.json({
+                'code': ResponseCode.BAD_REQUEST_ARGS,
+                'message': '两次输入的密码不一致',
+                'data': None
+            }, status=200)
+
+        try:
+            user = User(username=username, password=password, isAdmin=False)
+            await user.save()
+        except IntegrityError:
+            return response.json({
+                'code': ResponseCode.DUPLICATE_KEY,
+                'message': '该用户名已存在',
+                'data': None
+            }, status=200)
+
+        await UserInfo.create(user=user, name=name or username)
+        token = await LoginRecord.login(user)
+        return response.json({
+            'code': ResponseCode.OK,
+            'message': '注册成功',
+            'data': {'token': token}
         }, status=200)
 
 class Logout(views.HTTPMethodView):
