@@ -1,0 +1,13 @@
+aiomysql==0.0.21
+tortoise-orm==0.17.7
+sanic==21.3.4
+werkzeug==0.15.4
+aiohttp==3.7.4.post0
+aioredis==2.0.0b1
+selenium==3.141.0
+apscheduler==3.7.0
+redis==3.5.3
+tortoise-cli==0.1.1
+aerich==0.5.8
+cryptography==3.4.7
+pycryptodome==3.19.0

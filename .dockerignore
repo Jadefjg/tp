@@ -1,0 +1,6 @@
+env/
+.git/
+.vscode/
+Dockerfile
+.dockerignore
+db.sqlite
