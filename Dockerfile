@@ -1,4 +1,7 @@
-FROM python:3.9-slim-bullseye
+# 国内默认走 DaoCloud 代理，避免直连 Docker Hub 超时。
+# 覆盖示例: docker build --build-arg PYTHON_IMAGE=python:3.11-slim-bookworm .
+ARG PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.9-slim-bullseye
+FROM ${PYTHON_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -11,16 +14,23 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN set -eux; \
+    if [ -f /etc/apt/sources.list ]; then \
+      sed -i 's/deb.debian.org/mirrors.aliyun.com/g; s/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list; \
+    fi; \
+    if [ -d /etc/apt/sources.list.d ]; then \
+      find /etc/apt/sources.list.d -type f -exec sed -i 's/deb.debian.org/mirrors.aliyun.com/g; s/security.debian.org/mirrors.aliyun.com/g' {} +; \
+    fi; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
         gcc \
         libffi-dev \
         libssl-dev \
         default-libmysqlclient-dev \
-        tzdata \
-    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
-    && echo $TZ > /etc/timezone \
-    && rm -rf /var/lib/apt/lists/*
+        tzdata; \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime; \
+    echo $TZ > /etc/timezone; \
+    rm -rf /var/lib/apt/lists/*
 
 ARG PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
 COPY requirements.txt .

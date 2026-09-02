@@ -53,7 +53,7 @@ class BaseWorker:
         self._running = True
         async def daemon():
             while self._running:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(1)
             print('stop worker')
         self._task = asyncio.create_task(self._run())
         tasks = [asyncio.create_task(daemon()), self._task]
@@ -153,11 +153,11 @@ class RedisListWorker(BaseWorker):
         while True:
             list_keys = list(self.handler_map)
             try:
-                async with self.redis as r:
-                    ret = await r.blpop(list_keys, timeout=5)
-                    if ret is None:
-                        continue
-                    key, msg = ret
+                ret = await self.redis.blpop(list_keys, timeout=1)
+                if ret is None:
+                    await asyncio.sleep(0)
+                    continue
+                key, msg = ret
             except ConnectionError:
                 break
             yield (msg, key)

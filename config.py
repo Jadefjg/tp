@@ -42,7 +42,7 @@ class CommonConfig:
 
     PORT = _env_int('TP_PORT', 8081)
     WORKERS = _env_int('TP_WORKERS', 1)
-    RUNNER_PER_WORKER = _env_int('TP_RUNNER_PER_WORKER', 20)
+    RUNNER_PER_WORKER = _env_int('TP_RUNNER_PER_WORKER', 4)
 
     GENERATE_SCHEMAS = _env_bool('TP_GENERATE_SCHEMAS', DEBUG)
     INIT_DEBUG_DATA = _env_bool('TP_INIT_DEBUG_DATA', DEBUG)
@@ -65,7 +65,7 @@ class CommonConfig:
 
     # config of log
     TASKRUNNER_LOGGER_NAME = 'tp.taskrunner'
-    LOG_LEVEL = logging.DEBUG
+    LOG_LEVEL = logging.DEBUG if DEBUG else logging.INFO
 
     # config of apscheduler job
     APSCHEDULER_MISFIRE_GRACE_TIME = 5
@@ -81,6 +81,9 @@ class CommonConfig:
             'password': os.getenv('MYSQL_PASSWORD', credentials['password']),
             'database': os.getenv('MYSQL_DATABASE', credentials['database']),
             'charset': os.getenv('MYSQL_CHARSET', credentials.get('charset', 'utf8mb4')),
+            'minsize': _env_int('MYSQL_POOL_MIN', credentials.get('minsize', 1)),
+            'maxsize': _env_int('MYSQL_POOL_MAX', credentials.get('maxsize', 10)),
+            'pool_recycle': _env_int('MYSQL_POOL_RECYCLE', credentials.get('pool_recycle', 3600)),
         })
         return {
             'default': {
@@ -99,7 +102,9 @@ class DEV(CommonConfig):
         'password': 'test',
         'database': 'test',
         'charset': 'utf8mb4',
-        'pool_recycle': 10
+        'minsize': 1,
+        'maxsize': 10,
+        'pool_recycle': 3600
     })
     ROOT_URL = '/'
     REDIS_URL = os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0')

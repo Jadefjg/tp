@@ -34,6 +34,34 @@ docker compose down -v       # 停止并删除数据（MySQL / Redis / 上传文
 
 生产环境建议用 Nginx 反代 `/api`、`/login`、`/user`、`/media`；`media` 也可以直接由 Nginx 提供静态文件。钉钉报告链接中的前端地址通过 `TP_HOST` 配置。
 
+# 阿里云已有环境：git pull 后部署
+
+服务器项目目录：`/alitest/tp-master`。生产上由 systemd 服务 `testplatform` 使用目录内 `venv` 运行，连宿主机 MySQL / Redis。**不要**执行 `docker compose down -v`。
+
+```bash
+ssh root@<服务器公网IP>
+cd /alitest/tp-master
+bash update.sh
+```
+
+脚本会：`git pull` → `pip install` → `systemctl restart testplatform` → 等待 8081 可访问。机器较忙时启动约 30–60 秒属正常。若 GitHub 超时：`SKIP_GIT=1 bash update.sh`。
+
+```bash
+systemctl status testplatform
+journalctl -u testplatform -f
+curl -I http://127.0.0.1:8081/login
+```
+
+外网一般为 `http://<公网IP>:8081/login`。
+
+国内 ECS 直连 Docker Hub 经常超时，因此默认不再用 Docker 发布。若必须走容器：
+
+```bash
+DEPLOY_MODE=docker bash update.sh
+```
+
+该模式会从 `docker.m.daocloud.io` 拉 Python 基础镜像，并接入现有 `shared-infra` 网络；构建失败时脚本会立即退出，不会误删正在运行的服务。
+
 # 本地部署
 1. 安装redis服务， 参考官方网站：https://redis.io/， linux系统可以直接通过包管理器安装
 ```
@@ -62,3 +90,18 @@ docker compose down -v       # 停止并删除数据（MySQL / Redis / 上传文
 3. UI自动化
 4. 系统的配置（LOW PRIORITY）
 5. ...
+
+
+#停止启动 testplatform 拉起，进程是 /alitest/tp-master/venv/bin/python3.8 app.py，监听 8081。现已执行：
+
+systemctl stop testplatform 进程已退出，8081 不再监听
+systemctl disable testplatform 开机不会再自动启动
+
+mysql、redis 正常运行，其他项目在使用
+
+# 后续要再开
+systemclt enable --now testplatform
+
+或：
+cd /alitest/tp-master
+bash update.sh

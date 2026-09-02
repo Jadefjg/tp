@@ -8,5 +8,6 @@ class SchedulerLock(models.Model):  # 保证在多worker的环境下apscheduler�
     async def get(cls):
         try:
             return await cls.create(name='lock')
-        except:
-            pass
+        except Exception:
+            # 上次 SIGKILL 未走到 after_server_stop 时锁行会残留，单进程部署应继续调度
+            return await cls.filter(name='lock').first()

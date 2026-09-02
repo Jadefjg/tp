@@ -143,3 +143,5 @@ cython_debug/
 
 media/
 db.sqlite
+
+ali.txt

@@ -74,10 +74,15 @@ async def handle_not_found(request, exception):
 
 
 if __name__ == '__main__':
+    # debug=True 时 Sanic 默认开启 auto_reload，会再 fork 子进程。
+    # systemd 停不掉子进程，只能 SIGKILL，下一次启动也会被拖到 1 分钟以上。
+    auto_reload = os.getenv('TP_AUTO_RELOAD', '').strip().lower() in ('1', 'true', 'yes', 'on')
     app.run(
-        debug=config.DEBUG,
+        debug=False,
+        auto_reload=auto_reload,
+        access_log=False,
         host='0.0.0.0',
-        port=config.Config.PORT, 
+        port=config.Config.PORT,
         workers=config.Config.WORKERS
     )
     

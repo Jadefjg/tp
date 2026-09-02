@@ -2,7 +2,7 @@ from sanic import views, response
 from sanic.request import Request
 from .models import User, UserInfo, LoginRecord
 from tortoise.exceptions import DoesNotExist, IntegrityError
-# import jwt
+import asyncio
 import time
 import os
 from config import Config
@@ -44,7 +44,9 @@ class Login(views.HTTPMethodView):
             user:User = await User.get(username=username)
             if user.status != 1:
                 return response.json({'message': '用户被禁用了'})
-            if user.check_password(password):
+            loop = asyncio.get_event_loop()
+            password_ok = await loop.run_in_executor(None, user.check_password, password)
+            if password_ok:
                 token = await LoginRecord.login(user)
                 return response.json({
                     'code': ResponseCode.OK,
